@@ -1,0 +1,32 @@
+
+use Mojo::Base -strict;
+use Test::More;
+use Test::Differences;
+
+use Text::Yeti::Table qw(render_table);
+
+sub render_to_string {
+    open my $io, '>', \my $buf
+      or die "Can't open in-core file: $!";
+    render_table( @_, $io );
+    return $buf;
+}
+
+my @items = (    #
+    { a => 1, b => 'x' },
+    { a => 2, b => 'y' },
+);
+
+eq_or_diff( render_to_string( \@items, [ 'a', 'b' ] ), <<TABLE );
+A   B
+1   x
+2   y
+TABLE
+
+eq_or_diff( render_to_string( \@items, [ 'a', 'b', 'c' ] ), <<TABLE );
+A   B   C     
+1   x   <none>
+2   y   <none>
+TABLE
+
+done_testing;

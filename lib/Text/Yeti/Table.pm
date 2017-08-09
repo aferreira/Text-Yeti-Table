@@ -11,9 +11,8 @@ our @EXPORT_OK = qw(render_table);
 # default stringification
 my $TO_S = sub { defined $_[0] ? "$_[0]" : "<none>" };
 
-# render_table($items, $table_spec);
-sub render_table {
-    my ( $items, $spec ) = ( shift, shift );
+sub _render_table {
+    my ( $items, $spec, $io ) = ( shift, shift, shift );
 
     my ( @rows, @len );
     my @spec = map { ref $_ ? $_ : [$_] } @$spec;
@@ -38,7 +37,13 @@ sub render_table {
     my $fmt = join( " " x 3, map {"%-${_}s"} @len ) . "\n";
 
     # Render the table
-    printf $fmt, @$_ for @rows;
+    printf {$io} $fmt, @$_ for @rows;
+}
+
+# render_table($items, $table_spec);
+# render_table($items, $table_spec, $io);
+sub render_table {
+    _render_table( shift, shift, shift // \*STDOUT );
 }
 
 sub max { $_[0] >= $_[1] ? $_[0] : $_[1] }

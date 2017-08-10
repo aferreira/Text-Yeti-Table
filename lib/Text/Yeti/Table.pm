@@ -123,6 +123,8 @@ The following code illustrates a full example:
 
     render_table( \@items, \@spec );
 
+The corresponding output is the table in L</"DESCRIPTION">.
+
 =head1 FUNCTIONS
 
 L<Text::Yeti::Table> implements the following functions, which can be imported individually.

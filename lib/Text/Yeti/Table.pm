@@ -17,28 +17,46 @@ sub _compile_table_spec {
 
     # 'key'
     # [ 'key', $to_s, 'head' ]
+    # { k => , h => , s => , x => }
 
-    # { K => 'key', H => 'head', S => $to_s }
+    # { I => $i, K => 'key', H => 'head', S => $to_s, X => $exc }
 
     my @columns;
+
+    my $i = 0;
     for (@$spec) {
-        my @spec = ref $_ ? @$_ : ($_);
-
-        my %spec;
-        $spec{K} = $spec[0];
-        $spec{H} = $spec[2]
-          // do { local $_ = $spec[0]; s/([a-z])([A-Z])/$1 $2/g; uc };
-        $spec{S} = $spec[1] // $TO_S;
-
-        push @columns, \%spec;
+        my %c;
+        $c{I} = $i++;
+        if ( ref eq 'HASH' ) {
+            my %spec = %$_;
+            $c{K} = $spec{k};
+            $c{H} = $spec{h}
+              // do { local $_ = $spec{k}; s/([a-z])([A-Z])/$1 $2/g; uc };
+            $c{S} = $spec{s} // $TO_S;
+            $c{X} = $spec{x} if $spec{x};
+        }
+        else {
+            my @spec = ref $_ ? @$_ : ($_);
+            $c{K} = $spec[0];
+            $c{H} = $spec[2]
+              // do { local $_ = $spec[0]; s/([a-z])([A-Z])/$1 $2/g; uc };
+            $c{S} = $spec[1] // $TO_S;
+        }
+        push @columns, \%c;
     }
-    return \@columns;
+
+    my $r = { C => \@columns };
+    if ( my @x = map $_->{I}, grep $_->{X}, @columns ) {
+        $r->{X} = \@x;
+    }
+    return $r;
 }
 
 sub _render_table {
     my ( $items, $spec, $io ) = ( shift, shift, shift );
 
-    my @spec = @{ _compile_table_spec($spec) };
+    my $t    = _compile_table_spec($spec);
+    my @spec = @{ $t->{C} };
 
     my ( @rows, @len );
 
@@ -53,6 +71,19 @@ sub _render_table {
         my @v = map { $to_s[$_]->( $item->{ $c[$_] }, $item ) } 0 .. $#c;
         $len[$_] = max( $len[$_], length $v[$_] ) for 0 .. $#c;
         push @rows, \@v;
+    }
+
+    # Exclude columns conditionally
+    if ( $t->{X} ) {
+        my %x;    # Compute exclusions
+        for my $i ( @{ $t->{X} } ) {
+            my @w = map { $_->[$i] } @rows;
+            $x{$i}++ if $t->{C}[$i]{X}( \@w );
+        }
+        if (%x) {    # Exclude
+            my @i = grep { !$x{$_} } 0 .. $#c;
+            @$_ = @{$_}[@i] for @rows, \@len, \@h;
+        }
     }
 
     # Compute the table format

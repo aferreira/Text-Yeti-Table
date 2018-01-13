@@ -45,7 +45,6 @@ sub _render_table {
     # Compute table headers
     my @h = map { $_->{H} } @spec;
     @len = map { length $_ } @h;
-    push @rows, \@h;
 
     # Compute table rows, keep track of max length
     my @c    = map { $_->{K} } @spec;
@@ -60,6 +59,7 @@ sub _render_table {
     my $fmt = join( " " x 3, map {"%-${_}s"} @len ) . "\n";
 
     # Render the table
+    printf {$io} $fmt, @h;
     printf {$io} $fmt, @$_ for @rows;
 }
 

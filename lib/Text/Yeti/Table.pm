@@ -65,11 +65,11 @@ sub _render_table {
     @len = map { length $_ } @h;
 
     # Compute table rows, keep track of max length
-    my @c    = map { $_->{K} } @spec;
+    my @k    = map { $_->{K} } @spec;
     my @to_s = map { $_->{S} } @spec;
     for my $item (@$items) {
-        my @v = map { $to_s[$_]->( $item->{ $c[$_] }, $item ) } 0 .. $#c;
-        $len[$_] = max( $len[$_], length $v[$_] ) for 0 .. $#c;
+        my @v = map { $to_s[$_]->( $item->{ $k[$_] }, $item ) } 0 .. $#k;
+        $len[$_] = max( $len[$_], length $v[$_] ) for 0 .. $#k;
         push @rows, \@v;
     }
 
@@ -77,11 +77,11 @@ sub _render_table {
     if ( $t->{X} ) {
         my %x;    # Compute exclusions
         for my $i ( @{ $t->{X} } ) {
-            my @w = map { $_->[$i] } @rows;
-            $x{$i}++ if $t->{C}[$i]{X}( \@w );
+            my @c = map { $_->[$i] } @rows;    # Column values
+            $x{$i}++ if $t->{C}[$i]{X}( \@c );
         }
-        if (%x) {    # Exclude
-            my @i = grep { !$x{$_} } 0 .. $#c;
+        if (%x) {                              # Exclude
+            my @i = grep { !$x{$_} } 0 .. $#k;
             @$_ = @{$_}[@i] for @rows, \@len, \@h;
         }
     }

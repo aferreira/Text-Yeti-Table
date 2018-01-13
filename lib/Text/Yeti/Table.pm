@@ -80,7 +80,7 @@ sub _render_table {
         my %x;    # Compute exclusions
         for my $i ( @{ $t->{X} } ) {
             my @c = map { $_->[$i] } @rows;    # Column values
-            $x{$i}++ if $t->{C}[$i]{X}( \@c );
+            $x{$i}++ if $spec[$i]{X}( \@c );
         }
         if (%x) {                              # Exclude
             my @keep = grep { !$x{$_} } @i;

@@ -12,6 +12,9 @@ our @EXPORT_OK = qw(render_table);
 # default stringification
 my $TO_S = sub { defined $_[0] ? "$_[0]" : "<none>" };
 
+# default header computation (from column key)
+my $TO_H = sub { local $_ = $_[0]; s/([a-z])([A-Z])/$1 $2/g; uc };
+
 sub _compile_table_spec {
     my $spec = shift;
 
@@ -30,16 +33,14 @@ sub _compile_table_spec {
         if ( ref eq 'HASH' ) {
             my %spec = %$_;
             $c{K} = $spec{k};
-            $c{H} = $spec{h}
-              // do { local $_ = $spec{k}; s/([a-z])([A-Z])/$1 $2/g; uc };
+            $c{H} = $spec{h} // $TO_H->( $spec{k} );
             $c{S} = $spec{s} // $TO_S;
             $c{X} = $spec{x} if $spec{x};
         }
         else {
             my @spec = ref $_ ? @$_ : ($_);
             $c{K} = $spec[0];
-            $c{H} = $spec[2]
-              // do { local $_ = $spec[0]; s/([a-z])([A-Z])/$1 $2/g; uc };
+            $c{H} = $spec[2] // $TO_H->( $spec[0] );
             $c{S} = $spec[1] // $TO_S;
         }
         push @columns, \%c;

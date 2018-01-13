@@ -65,11 +65,12 @@ sub _render_table {
     @len = map { length $_ } @h;
 
     # Compute table rows, keep track of max length
+    my @i    = 0 .. $#spec;
     my @k    = map { $_->{K} } @spec;
     my @to_s = map { $_->{S} } @spec;
     for my $item (@$items) {
-        my @v = map { $to_s[$_]->( $item->{ $k[$_] }, $item ) } 0 .. $#k;
-        $len[$_] = max( $len[$_], length $v[$_] ) for 0 .. $#k;
+        my @v = map { $to_s[$_]->( $item->{ $k[$_] }, $item ) } @i;
+        $len[$_] = max( $len[$_], length $v[$_] ) for @i;
         push @rows, \@v;
     }
 
@@ -81,8 +82,8 @@ sub _render_table {
             $x{$i}++ if $t->{C}[$i]{X}( \@c );
         }
         if (%x) {                              # Exclude
-            my @i = grep { !$x{$_} } 0 .. $#k;
-            @$_ = @{$_}[@i] for @rows, \@len, \@h;
+            my @keep = grep { !$x{$_} } @i;
+            @$_ = @{$_}[@keep] for @rows, \@len, \@h;
         }
     }
 

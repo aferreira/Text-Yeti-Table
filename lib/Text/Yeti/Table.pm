@@ -66,11 +66,11 @@ sub _render_table {
     @len = map { length $_ } @h;
 
     # Compute table rows, keep track of max length
-    my @i    = 0 .. $#$c;
-    my @k    = map { $_->{K} } @$c;
-    my @to_s = map { $_->{S} } @$c;
+    my @i = 0 .. $#$c;
+    my @k = map { $_->{K} } @$c;
+    my @s = map { $_->{S} } @$c;
     for my $item (@$items) {
-        my @v = map { $to_s[$_]->( $item->{ $k[$_] }, $item ) } @i;
+        my @v = map { $s[$_]->( $item->{ $k[$_] }, $item ) } @i;
         $len[$_] = max( $len[$_], length $v[$_] ) for @i;
         push @rows, \@v;
     }

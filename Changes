@@ -3,6 +3,8 @@ Release history for Text-Yeti-Table
 
 {{$NEXT}}
 
+    - No trailing spaces when rendering table
+
 v0.2     2018-01-15 15:15:02-08:00 America/Los_Angeles
 
     - Document column specs as hashrefs

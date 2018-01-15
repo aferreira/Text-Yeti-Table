@@ -89,7 +89,9 @@ sub _render_table {
     }
 
     # Compute the table format
-    my $fmt = join( " " x 3, map {"%-${_}s"} @len ) . "\n";
+    my @fmt = map {"%-${_}s"} @len;
+    $fmt[-1] = '%s';
+    my $fmt = join( ' ' x 3, @fmt ) . "\n";
 
     # Render the table
     printf {$io} $fmt, @h;

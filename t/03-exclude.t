@@ -35,7 +35,7 @@ A   B
 TABLE
 
     eq_or_diff( render_to_string( \@items, [ 'a', 'b', 'c' ] ), <<TABLE );
-A   B   C     
+A   B   C
 1   x   <none>
 2   y   <none>
 TABLE
@@ -57,8 +57,8 @@ TABLE
     ];
 
     eq_or_diff( render_to_string( \@items, $spec ), <<TABLE );
-A   B   C     
-1   x   ok    
+A   B   C
+1   x   ok
 2   y   <none>
 TABLE
 }

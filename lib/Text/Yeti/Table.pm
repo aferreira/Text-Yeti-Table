@@ -56,19 +56,19 @@ sub _compile_table_spec {
 sub _render_table {
     my ( $items, $spec, $io ) = ( shift, shift, shift );
 
-    my $t    = _compile_table_spec($spec);
-    my @spec = @{ $t->{C} };
+    my $t = _compile_table_spec($spec);
+    my $c = $t->{C};
 
     my ( @rows, @len );
 
     # Compute table headers
-    my @h = map { $_->{H} } @spec;
+    my @h = map { $_->{H} } @$c;
     @len = map { length $_ } @h;
 
     # Compute table rows, keep track of max length
-    my @i    = 0 .. $#spec;
-    my @k    = map { $_->{K} } @spec;
-    my @to_s = map { $_->{S} } @spec;
+    my @i    = 0 .. $#$c;
+    my @k    = map { $_->{K} } @$c;
+    my @to_s = map { $_->{S} } @$c;
     for my $item (@$items) {
         my @v = map { $to_s[$_]->( $item->{ $k[$_] }, $item ) } @i;
         $len[$_] = max( $len[$_], length $v[$_] ) for @i;
@@ -80,7 +80,7 @@ sub _render_table {
         my %x;    # Compute exclusions
         for my $i ( @{ $t->{X} } ) {
             my @c = map { $_->[$i] } @rows;    # Column values
-            $x{$i}++ if $spec[$i]{X}( \@c );
+            $x{$i}++ if $c->[$i]{X}( \@c );
         }
         if (%x) {                              # Exclude
             my @keep = grep { !$x{$_} } @i;

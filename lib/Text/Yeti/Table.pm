@@ -12,32 +12,87 @@ our @EXPORT_OK = qw(render_table);
 # default stringification
 my $TO_S = sub { defined $_[0] ? "$_[0]" : "<none>" };
 
+# default header computation (from column key)
+my $TO_H = sub { local $_ = $_[0]; s/([a-z])([A-Z])/$1 $2/g; uc };
+
+sub _compile_table_spec {
+    my $spec = shift;
+
+    # 'key'
+    # [ 'key', $to_s, 'head' ]
+    # { k => , h => , s => , x => }
+
+    # { I => $i, K => 'key', H => 'head', S => $to_s, X => $exc }
+
+    my @columns;
+
+    my $i = 0;
+    for (@$spec) {
+        my %c;
+        $c{I} = $i++;
+        if ( ref eq 'HASH' ) {
+            my %spec = %$_;
+            $c{K} = $spec{k};
+            $c{H} = $spec{h} // $TO_H->( $spec{k} );
+            $c{S} = $spec{s} // $TO_S;
+            $c{X} = $spec{x} if $spec{x};
+        }
+        else {
+            my @spec = ref $_ ? @$_ : ($_);
+            $c{K} = $spec[0];
+            $c{H} = $spec[2] // $TO_H->( $spec[0] );
+            $c{S} = $spec[1] // $TO_S;
+        }
+        push @columns, \%c;
+    }
+
+    my $r = { C => \@columns };
+    if ( my @x = map $_->{I}, grep $_->{X}, @columns ) {
+        $r->{X} = \@x;
+    }
+    return $r;
+}
+
 sub _render_table {
     my ( $items, $spec, $io ) = ( shift, shift, shift );
 
+    my $t    = _compile_table_spec($spec);
+    my @spec = @{ $t->{C} };
+
     my ( @rows, @len );
-    my @spec = map { ref $_ ? $_ : [$_] } @$spec;
-    my @c = map { $_->[0] } @spec;
 
     # Compute table headers
-    my @h = map {
-        $_->[2] // do { local $_ = $_->[0]; s/([a-z])([A-Z])/$1 $2/g; uc }
-    } @spec;
+    my @h = map { $_->{H} } @spec;
     @len = map { length $_ } @h;
-    push @rows, \@h;
 
     # Compute table rows, keep track of max length
-    my @to_s = map { $_->[1] // $TO_S } @spec;
+    my @i    = 0 .. $#spec;
+    my @k    = map { $_->{K} } @spec;
+    my @to_s = map { $_->{S} } @spec;
     for my $item (@$items) {
-        my @v = map { $to_s[$_]->( $item->{ $c[$_] }, $item ) } 0 .. $#c;
-        $len[$_] = max( $len[$_], length $v[$_] ) for 0 .. $#c;
+        my @v = map { $to_s[$_]->( $item->{ $k[$_] }, $item ) } @i;
+        $len[$_] = max( $len[$_], length $v[$_] ) for @i;
         push @rows, \@v;
+    }
+
+    # Exclude columns conditionally
+    if ( $t->{X} ) {
+        my %x;    # Compute exclusions
+        for my $i ( @{ $t->{X} } ) {
+            my @c = map { $_->[$i] } @rows;    # Column values
+            $x{$i}++ if $spec[$i]{X}( \@c );
+        }
+        if (%x) {                              # Exclude
+            my @keep = grep { !$x{$_} } @i;
+            @$_ = @{$_}[@keep] for @rows, \@len, \@h;
+        }
     }
 
     # Compute the table format
     my $fmt = join( " " x 3, map {"%-${_}s"} @len ) . "\n";
 
     # Render the table
+    printf {$io} $fmt, @h;
     printf {$io} $fmt, @$_ for @rows;
 }
 
@@ -134,7 +189,7 @@ L<Text::Yeti::Table> implements the following functions, which can be imported i
     render_table( \@items, $spec );
     render_table( \@items, $spec, $io );
 
-The C<$spec> is an arrayref whose entries are:
+The C<$spec> is an arrayref whose entries can be:
 
 =over 4
 
@@ -159,6 +214,33 @@ By default, it is computed from the key, as in the examples below:
 
     "image"       -> "IMAGE"
     "ContainerID" -> "CONTAINER ID"
+
+=item *
+
+a hashref, with keys
+
+    k => 'key',       required
+    s => $to_s,
+    h => $header,
+    x => $exclude,
+
+where
+
+C<$to_s> is a function to convert the value under C<k> to text.
+By default, C<undef> becomes C<< '<none>' >>, and everything else
+is stringfied.
+
+C<$header> is the header for the corresponding column.
+If not given, it is computed from the key as above.
+
+C<$exclude> is a coderef which given all the values of a column
+(as an arrayref) should return true if the column should be excluded
+or false if the column is to be kept. As an example,
+
+    use List::Util 'all';
+    (x => sub { all { $_ eq '<none>' } @{$_[0]} })
+
+will exclude the corresponding column if all values collapse to C<< '<none>' >>.
 
 =back
 

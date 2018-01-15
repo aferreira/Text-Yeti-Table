@@ -2,7 +2,7 @@
 use Mojo::Base -strict;
 use Test::More;
 use Test::Differences;
-use List::Util 'all';
+use List::Util 1.33 'all';
 
 use Text::Yeti::Table qw(render_table);
 

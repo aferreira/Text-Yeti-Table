@@ -189,7 +189,7 @@ L<Text::Yeti::Table> implements the following functions, which can be imported i
     render_table( \@items, $spec );
     render_table( \@items, $spec, $io );
 
-The C<$spec> is an arrayref whose entries are:
+The C<$spec> is an arrayref whose entries can be:
 
 =over 4
 
@@ -214,6 +214,33 @@ By default, it is computed from the key, as in the examples below:
 
     "image"       -> "IMAGE"
     "ContainerID" -> "CONTAINER ID"
+
+=item *
+
+a hashref, with keys
+
+    k => 'key',       required
+    s => $to_s,
+    h => $header,
+    x => $exclude,
+
+where
+
+C<$to_s> is a function to convert the value under C<k> to text.
+By default, C<undef> becomes C<< '<none>' >>, and everything else
+is stringfied.
+
+C<$header> is the header for the corresponding column.
+If not given, it is computed from the key as above.
+
+C<$exclude> is a coderef which given all the values of a column
+(as an arrayref) should return true if the column should be excluded
+or false if the column is to be kept. As an example,
+
+    use List::Util 'all';
+    (x => sub { all { $_ eq '<none>' } @{$_[0]} })
+
+will exclude the corresponding column if all values collapse to C<< '<none>' >>.
 
 =back
 

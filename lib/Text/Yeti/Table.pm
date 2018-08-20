@@ -17,6 +17,7 @@ my $TO_H = sub { local $_ = $_[0]; s/([a-z])([A-Z])/$1 $2/g; uc };
 
 sub _compile_table_spec {
     my $spec = shift;
+    $spec = { c => $spec } if ref $spec eq 'ARRAY';
 
     # 'key'
     # [ 'key', $to_s, 'head' ]
@@ -27,7 +28,7 @@ sub _compile_table_spec {
     my @columns;
 
     my $i = 0;
-    for (@$spec) {
+    for ( @{ $spec->{c} } ) {
         my %c;
         $c{I} = $i++;
         if ( ref eq 'HASH' ) {
@@ -47,6 +48,7 @@ sub _compile_table_spec {
     }
 
     my $r = { C => \@columns };
+    $r->{T} = $spec->{t} if $spec->{t};    # trunc
     if ( my @x = map $_->{I}, grep $_->{X}, @columns ) {
         $r->{X} = \@x;
     }
@@ -54,7 +56,7 @@ sub _compile_table_spec {
 }
 
 sub _render_table {
-    my ( $items, $spec, $io ) = ( shift, shift, shift );
+    my ( $items, $spec, $out ) = ( shift, shift, shift );
 
     my $t = _compile_table_spec($spec);
     my $c = $t->{C};
@@ -92,6 +94,13 @@ sub _render_table {
     my @fmt = map {"%-${_}s"} @len;
     $fmt[-1] = '%s';
     my $fmt = join( ' ' x 3, @fmt ) . "\n";
+
+    # Prepare the IO
+    my $io = $out;
+    if ( $t->{T} ) {
+        require Text::Yeti::Table::TruncIO;
+        $io = Text::Yeti::Table::TruncIO->new( out => $io, len => $t->{T} );
+    }
 
     # Render the table
     $io->printf( $fmt, @h );

@@ -10,7 +10,7 @@ use Exporter 'import';
 our @EXPORT_OK = qw(render_table);
 
 # default stringification
-my $TO_S = sub { defined $_[0] ? "$_[0]" : "<none>" };
+my $TO_S = sub { defined $_[0] ? "$_[0]" : '<none>' };
 
 # default header computation (from column key)
 my $TO_H = sub { local $_ = $_[0]; s/([a-z])([A-Z])/$1 $2/g; uc };

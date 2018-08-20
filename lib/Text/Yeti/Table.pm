@@ -94,8 +94,8 @@ sub _render_table {
     my $fmt = join( ' ' x 3, @fmt ) . "\n";
 
     # Render the table
-    printf {$io} $fmt, @h;
-    printf {$io} $fmt, @$_ for @rows;
+    $io->printf( $fmt, @h );
+    $io->printf( $fmt, @$_ ) for @rows;
 }
 
 sub render_table {
